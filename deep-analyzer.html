@@ -14,6 +14,7 @@
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
+const preset=new URLSearchParams(location.search).get('match_id');if(preset&&/^\d{6,20}$/.test(preset)){$('matchId').value=preset;setTimeout(()=>{$('load').click()},0);}
 let match=null,player=null;
 const n=v=>Number.isFinite(+v)?Number(v):null;
 const fmt=v=>v===null||v===undefined||!Number.isFinite(+v)?'—':Number(v).toLocaleString('ru-RU',{maximumFractionDigits:1});
