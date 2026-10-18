@@ -65,6 +65,18 @@ jobs:
           p.write_text(s,encoding="utf-8")
           PY
           test -s public/data-hub.html
+      - name: Publish CarryLab v0.6 Command Center
+        run: |
+          cp command-center.html public/command-center.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("public/index.html")
+          html=p.read_text(encoding="utf-8")
+          link='<a href="command-center.html" style="position:fixed;right:18px;bottom:126px;z-index:9999;background:#c7f478;color:#17260f;padding:12px 17px;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 6px 20px #0008">CarryLab v0.6 — все инструменты ↗</a>'
+          html=html.replace("</body>",link+"</body>")
+          p.write_text(html,encoding="utf-8")
+          PY
+          test -s public/command-center.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
