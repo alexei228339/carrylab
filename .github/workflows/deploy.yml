@@ -29,7 +29,8 @@ jobs:
           with zipfile.ZipFile(files[0]) as z:
               z.extractall("public")
           PY
-          test -f public/index.html
+          test -s public/index.html
+          echo "CarryLab index.html found; website is ready to publish."
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
