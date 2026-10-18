@@ -42,6 +42,17 @@ jobs:
           p.write_text(s,encoding="utf-8")
           PY
           test -s public/coach-v03.js
+      - name: Install independent deep analyzer
+        run: |
+          cp deep-analyzer.html public/deep-analyzer.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("public/index.html")
+          s=p.read_text(encoding="utf-8")
+          s=s.replace("</body>", '<div style="position:fixed;right:18px;bottom:18px;z-index:9999;background:#b6ed65;padding:12px 17px;border-radius:12px;box-shadow:0 8px 28px #0008"><a href="deep-analyzer.html" style="color:#122118;font-weight:800;text-decoration:none">Новый анализ матча v0.4 ↗</a></div></body>')
+          p.write_text(s,encoding="utf-8")
+          PY
+          test -s public/deep-analyzer.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
