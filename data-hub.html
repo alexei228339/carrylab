@@ -1,0 +1,39 @@
+<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CarryLab — OpenDota + DOTABUFF</title><style>
+:root{color-scheme:dark;font:15px system-ui;background:#0b1115;color:#eff6ed}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top right,#213d2d,#0b1115 55%);min-height:100vh}main{max-width:1150px;margin:auto;padding:30px 20px}h1{font-size:clamp(28px,4vw,45px);margin:.4em 0}h2{font-size:20px}p,small{color:#a6b7ac}nav{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #304139;padding:18px 4vw}a{color:#c7f477}nav b{letter-spacing:.12em}article{background:#111e21;border:1px solid #34483c;border-radius:16px;padding:22px;margin:16px 0}input,button{font:inherit;border-radius:9px;padding:12px;background:#091516;color:white;border:1px solid #507354}button{background:#bcf06d;color:#17250e;cursor:pointer;font-weight:700}button:disabled{opacity:.55}input{min-width:260px;flex:1}form{display:flex;gap:10px;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#0c181b;border-radius:10px;padding:16px}.stat strong{font-size:25px;display:block;color:#c7f477}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:11px 6px;border-bottom:1px solid #33443c}td a{white-space:nowrap}.scroll{overflow:auto}.muted{color:#a6b7ac}.tag{font-size:12px;color:#c7f477}.error{color:#ffc27a}.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.hide{display:none}@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.columns{grid-template-columns:1fr}}@media(max-width:500px){.stats{grid-template-columns:1fr}input{min-width:0;width:100%}}</style></head><body><nav><b>CARRYLAB / DATA HUB</b><a href="./">← Главный сайт</a></nav><main><small class="tag">OPENDOTA API + DOTABUFF LINKS · v0.5</small><h1>Статистика одного игрока в одном месте</h1><p>Автоматически загружаем публичную статистику через OpenDota. Переход на страницы DOTABUFF по тем же Steam32 ID и ID матчей — без неофициального парсинга сайта.</p>
+<article><h2>Подключить игрока</h2><form id="form"><input id="account" placeholder="Steam32 ID или ссылка на профиль DOTABUFF/OpenDota" aria-label="Ссылка или Steam32 ID" required><button id="go" type="submit">Загрузить профиль</button></form><p id="status" role="status">Вставь Steam32 ID или ссылку вида dotabuff.com/players/123456789</p><small>Steam64 также принимается и преобразуется в Steam32, если входит в допустимый диапазон.</small></article>
+<div id="results" class="hide"><article><h2 id="profileTitle">Игрок</h2><div class="stats" id="stats"></div><p id="links"></p></article><div class="columns"><article><h2>Герои</h2><div class="scroll"><table><thead><tr><th>Герой</th><th>Матчей</th><th>Побед</th><th>WR</th></tr></thead><tbody id="heroes"></tbody></table></div></article><article><h2>Последние матчи</h2><div class="scroll"><table><thead><tr><th>Герой</th><th>K/D/A</th><th>Результат</th><th>Источники</th></tr></thead><tbody id="matches"></tbody></table></div></article></div></div><article><h2>Откуда берутся данные</h2><p><b>OpenDota:</b> API профиля, побед и поражений, сыгранных героев, последних матчей. <b>DOTABUFF:</b> ссылки на страницы конкретного игрока и матча. Автоматического чтения данных DOTABUFF здесь нет — для него нужна разрешённая интеграция, а не обход ограничений сайта.</p></article></main>
+<script>
+'use strict';
+const el=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let heroMap={};
+const api='https://api.opendota.com/api/';
+function getID(raw){
+ const s=raw.trim();let str=s;if(/^https?:/i.test(s)){let url;try{url=new URL(s);}catch{throw Error('Неверная ссылка');}if(!['dotabuff.com','www.dotabuff.com','ru.dotabuff.com','opendota.com','www.opendota.com'].includes(url.hostname))throw Error('Поддерживается ссылка DOTABUFF или OpenDota');const match=url.pathname.match(/^\/players\/(\d+)/);if(!match)throw Error('Ссылка должна вести на страницу игрока');str=match[1];}
+ if(!/^\d{1,20}$/.test(str))throw Error('Укажи числовой Steam32 ID или ссылку на игрока');
+ let value=BigInt(str),base=76561197960265728n;if(value>=base)value-=base;if(value<0n||value>4294967295n)throw Error('ID вне диапазона Steam32');return String(value);
+}
+async function get(path){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),18000);try{const r=await fetch(api+path,{signal:controller.signal});if(!r.ok)throw Error('OpenDota HTTP '+r.status);return await r.json();}finally{clearTimeout(timer);}}
+function rowhero(id){return esc(heroMap[id]||('Герой #'+id));}
+function setTable(id,rows,empty){el(id).innerHTML=rows.length?rows.join(''):'<tr><td colspan="4" class="muted">'+empty+'</td></tr>';}
+async function load(e){
+ e.preventDefault();let id;try{id=getID(el('account').value);}catch(err){el('status').textContent=err.message;return;}
+ el('go').disabled=true;el('status').textContent='Загружаю общедоступные данные OpenDota…';
+ try{
+ const all=await Promise.allSettled([get('players/'+id),get('players/'+id+'/wl'),get('players/'+id+'/heroes'),get('players/'+id+'/recentMatches'),get('heroes')]);
+ const [profile,wl,heroes,recent,defs]=all.map(x=>x.status==='fulfilled'?x.value:null);
+ if(!profile&&!wl&&!heroes&&!recent)throw Error('API недоступен или профиль не найден');
+ if(Array.isArray(defs))heroMap=Object.fromEntries(defs.map(h=>[h.id,h.localized_name]));
+ el('results').classList.remove('hide');el('profileTitle').textContent=profile?.profile?.personaname||('Игрок #'+id);
+ const wins=Number(wl?.win??0),loss=Number(wl?.lose??0),total=wins+loss;
+ el('stats').innerHTML=[['Steam32',id],['Матчи',total||'—'],['Победы',wl?.win??'—'],['Винрейт',total?(100*wins/total).toFixed(1)+'%':'—']].map(([label,value])=>'<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>').join('');
+ el('links').innerHTML='<a href="https://www.dotabuff.com/players/'+id+'" target="_blank" rel="noopener noreferrer">DOTABUFF ↗</a>　<a href="https://www.opendota.com/players/'+id+'" target="_blank" rel="noopener noreferrer">OpenDota ↗</a>';
+ const hs=Array.isArray(heroes)?[...heroes].sort((a,b)=>Number(b.games)-Number(a.games)).slice(0,20):[];
+ setTable('heroes',hs.map(h=>'<tr><td>'+rowhero(h.hero_id)+'</td><td>'+esc(h.games)+'</td><td>'+esc(h.win)+'</td><td>'+((Number(h.games)>0)?(100*Number(h.win)/Number(h.games)).toFixed(1)+'%':'—')+'</td></tr>'),'Нет данных о героях');
+ const ms=Array.isArray(recent)?recent.slice(0,20):[];
+ setTable('matches',ms.map(m=>{const mid=String(m.match_id||'');const radiant=m.player_slot<128;const win=Boolean(m.radiant_win)===radiant;return '<tr><td>'+rowhero(m.hero_id)+'</td><td>'+[m.kills,m.deaths,m.assists].map(esc).join('/')+'</td><td>'+(win?'Победа':'Поражение')+'</td><td><a target="_blank" rel="noopener noreferrer" href="https://www.opendota.com/matches/'+mid+'">OD</a> · <a target="_blank" rel="noopener noreferrer" href="https://www.dotabuff.com/matches/'+mid+'">DB</a></td></tr>'; }),'Нет доступных матчей');
+ const failed=['профиль','победы','герои','матчи','справочник героев'].filter((name,i)=>all[i].status==='rejected');
+ el('status').textContent='Загружен игрок '+id+'. '+(failed.length?'Часть данных недоступна: '+failed.join(', '):'Данные получены.');
+ }catch(err){el('status').textContent='Ошибка: '+err.message+'. Попробуй позднее или проверь приватность профиля.';}finally{el('go').disabled=false;}
+}
+el('form').addEventListener('submit',load);
+</script></body></html>
