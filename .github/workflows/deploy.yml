@@ -88,6 +88,22 @@ jobs:
           p.write_text(html,encoding="utf-8")
           PY
           test -s public/replay-download.html
+      - name: Apply noir pink theme site-wide
+        run: |
+          cp noir-pink.css public/noir-pink.css
+          cp noir-pink.js public/noir-pink.js
+          python3 - <<'PY'
+          from pathlib import Path
+          for page in Path('public').glob('*.html'):
+              html=page.read_text(encoding='utf-8')
+              if 'noir-pink.css' not in html:
+                  html=html.replace('</head>','<link rel="stylesheet" href="noir-pink.css"></head>')
+              if 'noir-pink.js' not in html:
+                  html=html.replace('</body>','<script defer src="noir-pink.js"></script></body>')
+              page.write_text(html,encoding='utf-8')
+          PY
+          test -s public/noir-pink.css
+          test -s public/noir-pink.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
