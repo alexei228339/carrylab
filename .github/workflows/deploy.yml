@@ -53,6 +53,18 @@ jobs:
           p.write_text(s,encoding="utf-8")
           PY
           test -s public/deep-analyzer.html
+      - name: Add OpenDota + DOTABUFF integration
+        run: |
+          cp data-hub.html public/data-hub.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("public/index.html")
+          s=p.read_text(encoding="utf-8")
+          link='<a href="data-hub.html" style="position:fixed;right:18px;bottom:72px;z-index:9999;background:#172d25;color:#c7f477;padding:12px 17px;border:1px solid #8ebf65;border-radius:12px;font-weight:800;text-decoration:none">OpenDota + DOTABUFF ↗</a>'
+          s=s.replace("</body>",link+"</body>")
+          p.write_text(s,encoding="utf-8")
+          PY
+          test -s public/data-hub.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
