@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CarryLab — Deep Match Analyzer</title>
+<style>
+:root{color-scheme:dark;--bg:#080e13;--panel:#101a21;--line:#2a3840;--txt:#e9f5ed;--muted:#99b1ac;--green:#b6ed65;--warn:#ffce78}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0%,#1f382c,transparent 42%),var(--bg);color:var(--txt);font:15px/1.5 system-ui,'Segoe UI',sans-serif}header{border-bottom:1px solid var(--line);padding:18px max(24px,calc((100vw - 1160px)/2))}nav{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.logo{font-weight:900;letter-spacing:.13em;color:var(--green);font-size:20px}a{color:var(--green);text-decoration:none}main{max-width:1208px;padding:30px 24px 80px;margin:auto}h1{font-size:clamp(28px,4vw,45px);margin:12px 0}h2{font-size:19px;margin:0 0 14px}p{color:var(--muted)}.eyebrow{color:var(--green);font-size:12px;font-weight:800;letter-spacing:.17em}.panel{background:linear-gradient(130deg,#132027,#0d151c);border:1px solid var(--line);border-radius:16px;padding:22px;margin:16px 0}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.controls{display:grid;grid-template-columns:minmax(230px,1fr) minmax(250px,1.2fr) auto auto;gap:10px}.input,button,select{padding:12px 14px;border:1px solid #385047;border-radius:9px;background:#0c171b;color:var(--txt);font:inherit;min-width:0}button{cursor:pointer;background:var(--green);color:#10220d;font-weight:800}button.alt{background:#172723;color:var(--green)}button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{background:#0a151b;border:1px solid var(--line);border-radius:12px;padding:17px}.metric .val{font-size:26px;font-weight:800;color:var(--green)}.metric small{color:var(--muted);display:block}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.chip{display:inline-block;border:1px solid #37524a;border-radius:30px;color:var(--green);padding:5px 10px;font-size:12px}.subtle{color:var(--muted);font-size:13px}.warn{color:var(--warn)}.chart{height:280px;width:100%;border-radius:8px;background:#091419}.chart svg{width:100%;height:100%}table{border-collapse:collapse;width:100%;text-align:left}td,th{border-bottom:1px solid var(--line);padding:9px 6px}th{color:var(--muted);font-weight:500}.list{display:grid;gap:10px}.item{border-left:3px solid var(--green);background:#0c171b;padding:12px 14px}.empty{color:var(--muted);padding:24px;background:#0b161b;border-radius:10px}.hidden{display:none!important}@media(max-width:850px){.controls,.two{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.controls,.two,.grid{grid-template-columns:1fr}main{padding:22px 14px}} 
+</style></head><body>
+<header><nav><div class="logo">CARRYLAB<span style="color:#fff"> / DEEP</span></div><a href="./">← Основной сайт</a></nav></header>
+<main><div class="eyebrow">DOTA 2 · ПОСЛЕМАТЧЕВЫЙ АНАЛИЗ · v0.4</div><h1>Разбирай решения, а не только KDA</h1><p>Настоящие данные OpenDota. Без подставных графиков, выдуманных таймингов и оценки перемещений, когда нет реплея.</p>
+<section class="panel"><h2>Загрузка матча</h2><div class="controls"><input class="input" id="matchId" inputmode="numeric" placeholder="ID матча Dota 2" aria-label="ID матча"><select id="players" aria-label="Выбор игрока" disabled><option>Сначала загрузите матч</option></select><button id="load">Загрузить</button><button class="alt" id="save" disabled>Отчёт CSV</button></div><p id="status" role="status">Введите публичный ID матча. Открытые данные будут запрошены через OpenDota.</p></section>
+<section id="results" class="hidden"><section class="panel"><div class="row" style="justify-content:space-between"><h2 id="heading">Матч</h2><span class="chip" id="evidence">Проверка данных</span></div><div class="grid" id="metrics"></div></section>
+<div class="two"><section class="panel"><h2>Золото и опыт по минутам</h2><div class="chart" id="progressChart"></div><p class="subtle">Показаны накопленное золото и опыт по минутам при наличии gold_t / xp_t.</p></section><section class="panel"><h2>LH и экономические периоды</h2><div class="chart" id="lhChart"></div><p class="subtle">Кривая LH: фактические поминутные значения, если OpenDota их возвращает.</p></section></div>
+<div class="two"><section class="panel"><h2>Контрольные точки</h2><div id="checkpoints"></div></section><section class="panel"><h2>Аудит доступных данных</h2><div id="audit" class="list"></div></section></div>
+<section class="panel"><h2>Рекомендации для керри</h2><div id="advice" class="list"></div><p class="subtle">Рекомендации — эвристики, учитывающие лишь цифры. Не являются доказательством тактической ошибки.</p></section></section>
+<section class="panel"><h2>Следующий уровень: реплей</h2><p>Разбор безопасных маршрутов фарма, контроля карты и решений о драках требует событий реплея, позиций и информации о врагах. Статический GitHub Pages не способен обрабатывать файлы <code>.dem</code>; это отдельный будущий сервис.</p></section></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let match=null,player=null;
+const n=v=>Number.isFinite(+v)?Number(v):null;
+const fmt=v=>v===null||v===undefined||!Number.isFinite(+v)?'—':Number(v).toLocaleString('ru-RU',{maximumFractionDigits:1});
+const h=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const arr=a=>Array.isArray(a)&&a.length>1?a.map(x=>n(x)):null;
+const datapoint=(a,i)=>a&&a[i]!=null?fmt(a[i]):'—';
+const feature=(label,good,desc)=>'<div class="item"><strong>'+h(label)+'</strong> <span class="'+(good?'':'warn')+'">'+(good?'● Доступно':'○ Недоступно')+'</span><div class="subtle">'+h(desc)+'</div></div>';
+function chart(target,series){
+  const valid=series.filter(s=>s.data&&s.data.some(v=>v!=null));
+  if(!valid.length){$(target).innerHTML='<div class="empty">Поминутных значений нет. Разбор матча через OpenDota может помочь.</div>';return;}
+  const values=valid.flatMap(s=>s.data.filter(v=>v!==null));const mx=Math.max(...values,1),steps=Math.max(...valid.map(s=>s.data.length-1),1);
+  const w=640,H=240,area=[42,12,w-20,H-29],sw=area[2]-area[0],sh=area[3]-area[1];
+  const path=s=>s.data.map((v,i)=>v==null?null:[area[0]+i/steps*sw,area[3]-v/mx*sh]).reduce((out,pt,i)=>pt?(out+(out&&!out.endsWith(' ')?' L':'M')+pt.map(z=>z.toFixed(1)).join(' ')):out+' ', '');
+  const lines=valid.map(s=>'<path d="'+path(s)+'" fill="none" stroke="'+s.color+'" stroke-width="3" stroke-linejoin="round"/>').join('');
+  const grids=[0,.25,.5,.75,1].map(k=>'<line x1="42" x2="620" y1="'+(area[3]-k*sh)+'" y2="'+(area[3]-k*sh)+'" stroke="#29403b"/><text x="38" y="'+(area[3]-k*sh+4)+'" font-size="11" fill="#aabcb5" text-anchor="end">'+fmt(mx*k)+'</text>').join('');
+  const ticks=[0,10,20,30,40,50,60].filter(i=>i<=steps).map(i=>'<text x="'+(area[0]+i/steps*sw)+'" y="233" font-size="11" fill="#aabcb5" text-anchor="middle">'+i+'м</text>').join('');
+  const legend=valid.map((s,i)=>'<text x="'+(60+i*210)+'" y="12" fill="'+s.color+'" font-size="12">'+h(s.name)+'</text>').join('');
+  $(target).innerHTML='<svg role="img" aria-label="Поминутный график" viewBox="0 0 640 245">'+grids+lines+ticks+legend+'</svg>';
+}
+function render(){
+ if(!match||!player)return;
+ $('results').classList.remove('hidden');
+ const p=player,dur=n(match.duration),minutes=(dur||60)/60,gold=arr(p.gold_t),xp=arr(p.xp_t),lh=arr(p.lh_t);
+ $('heading').textContent='Матч #'+match.match_id+' · Герой '+(p.hero_id??'?');
+ const parsed=!!(gold||xp||lh||p.purchase_log?.length||p.obs_placed);
+ $('evidence').textContent=parsed?'Поминутные данные: частично доступны':'Только сводная статистика';
+ const team=(match.players||[]).filter(x=>(x.player_slot<128)===(p.player_slot<128));
+ const teamKills=team.reduce((sum,x)=>sum+(n(x.kills)||0),0);
+ const kp=teamKills?100*((n(p.kills)||0)+(n(p.assists)||0))/teamKills:null;
+ const metrics=[['GPM',p.gold_per_min],['XPM',p.xp_per_min],['K / D / A',[(p.kills??'—'),(p.deaths??'—'),(p.assists??'—')].join(' / ')],['LH/мин',fmt((n(p.last_hits)||0)/minutes)],['Участие в убийствах',kp===null?'—':fmt(kp)+'%'],['Урон героям',p.hero_damage],['Урон вышкам',p.tower_damage],['Общий нетворс',p.net_worth]];
+ $('metrics').innerHTML=metrics.map(([k,v])=>'<div class="metric"><small>'+h(k)+'</small><div class="val">'+h(typeof v==='number'?fmt(v):v??'—')+'</div></div>').join('');
+ chart('progressChart',[{name:'Золото',data:gold,color:'#b6ed65'},{name:'Опыт',data:xp,color:'#64bbef'}]);
+ chart('lhChart',[{name:'Ластхиты',data:lh,color:'#d0a8f3'}]);
+ $('checkpoints').innerHTML='<table><thead><tr><th>Минута</th><th>LH</th><th>Золото</th><th>Опыт</th></tr></thead><tbody>'+[5,10,15,20,25,30,40].map(i=>'<tr><td>'+i+'</td><td>'+datapoint(lh,i)+'</td><td>'+datapoint(gold,i)+'</td><td>'+datapoint(xp,i)+'</td></tr>').join('')+'</tbody></table>';
+ $('audit').innerHTML=[
+ feature('Поминутная экономика',!!gold&&!!xp,'Массивы gold_t и xp_t'),
+ feature('Ластхиты по минутам',!!lh,'Массив lh_t'),
+ feature('Предметы',Array.isArray(p.purchase_log)&&p.purchase_log.length>0,'События purchase_log, когда доступны'),
+ feature('Координаты смертей',!!p.deaths_pos,'Агрегированные события не объясняют причину смерти'),
+ feature('Полный маршрут',false,'Для достоверной последовательности нужны данные позиций/реплей'),
+ feature('Про-сравнение',false,'Нужно выбрать реальный аккаунт про-игрока и сопоставимые матчи')].join('');
+ const suggestions=[];
+ if(lh&&lh[10]!=null&&lh[10]<45)suggestions.push('Посмотри ранний ластхитинг: LH@10 = '+fmt(lh[10])+'. Ориентир индивидуален для матчапа, поэтому сравни со своими играми на том же герое.');
+ if(n(p.deaths)>=7)suggestions.push('Разбери '+fmt(p.deaths)+' смертей: проверь позицию врагов, доступный вижен и моменты появления на линии.');
+ if(n(p.gold_per_min)!=null&&n(p.gold_per_min)<500)suggestions.push('GPM '+fmt(p.gold_per_min)+': проверь простои между пачками крипов и лагерями и тайминги смертей.');
+ if(kp!=null&&kp<35)suggestions.push('Участие в убийствах команды '+fmt(kp)+'%: проверь, где можно было подключиться после выхода ключевого предмета.');
+ if(n(p.tower_damage)===0)suggestions.push('Урон вышкам равен нулю: проверь, были ли безопасные окна для давления на объекты.');
+ if(!suggestions.length)suggestions.push('Сводная статистика не показывает явных сигналов по простым правилам. Сравни тайминги с собственными матчами и изучи реплей.');
+ $('advice').innerHTML=suggestions.map((s,i)=>'<div class="item"><strong>Наблюдение '+(i+1)+'</strong><div>'+h(s)+'</div></div>').join('');
+}
+async function load(){
+ const id=$('matchId').value.trim();if(!/^\d{6,20}$/.test(id)){$('status').textContent='Введите корректный числовой ID матча.';return;}
+ $('load').disabled=true;$('status').textContent='Загружаю OpenDota /matches/'+id+'…';
+ try{
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+ let response;try{response=await fetch('https://api.opendota.com/api/matches/'+id,{signal:controller.signal});}finally{clearTimeout(timeout);}
+ if(!response.ok)throw Error('HTTP '+response.status+(response.status===429?' — лимит API':''));
+ const value=await response.json();if(!Array.isArray(value.players)||!value.players.length)throw Error('В ответе нет списка игроков');
+ match=value;player=value.players[0];
+ $('players').disabled=false;$('players').innerHTML=match.players.map((p,i)=>'<option value="'+i+'">'+h((p.personaname||'Игрок '+(i+1))+' · герой #'+p.hero_id+' · '+(p.player_slot<128?'Radiant':'Dire'))+'</option>').join('');
+ $('save').disabled=false;$('status').textContent='Матч загружен. Выбери своего игрока; данные рассчитываются заново при смене.';
+ render();
+ }catch(err){$('status').textContent='Не удалось загрузить матч: '+err.message+'. Публичные данные могут быть ограничены OpenDota.';}finally{$('load').disabled=false;}
+}
+$('load').addEventListener('click',load);
+$('matchId').addEventListener('keydown',e=>{if(e.key==='Enter')load();});
+$('players').addEventListener('change',()=>{player=match.players[Number($('players').value)];render();});
+$('save').addEventListener('click',()=>{
+ if(!match||!player)return;
+ const fields=[['match_id',match.match_id],['hero_id',player.hero_id],['account_id',player.account_id??''],['duration_seconds',match.duration],['gpm',player.gold_per_min],['xpm',player.xp_per_min],['kills',player.kills],['deaths',player.deaths],['assists',player.assists],['last_hits',player.last_hits],['lh_at_10',arr(player.lh_t)?.[10]??''],['gold_at_10',arr(player.gold_t)?.[10]??''],['xp_at_10',arr(player.xp_t)?.[10]??'']];
+ const csv='metric,value\n'+fields.map(([a,b])=>a+','+String(b??'').replaceAll(',','')).join('\n')+'\n';
+ const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='carrylab-'+match.match_id+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+});
+</script></body></html>
