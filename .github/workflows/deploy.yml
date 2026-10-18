@@ -115,6 +115,22 @@ jobs:
         run: |
           cp draft-lab.html public/draft-lab.html
           test -s public/draft-lab.html
+      - name: Searchable hero pickers and polished UI
+        run: |
+          cp hero-search.js public/hero-search.js
+          cp hero-search.css public/hero-search.css
+          python3 - <<'PY'
+          from pathlib import Path
+          for page in Path('public').glob('*.html'):
+              content=page.read_text(encoding='utf-8')
+              if page.name in ('draft-lab.html','command-center.html'):
+                  if 'hero-search.css' not in content:
+                      content=content.replace('</head>','<link rel="stylesheet" href="hero-search.css"></head>')
+                  if 'hero-search.js' not in content:
+                      content=content.replace('</body>','<script defer src="hero-search.js"></script></body>')
+                  page.write_text(content,encoding='utf-8')
+          PY
+          test -s public/hero-search.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
