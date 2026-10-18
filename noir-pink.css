@@ -1,1 +1,27 @@
 :root{color-scheme:dark;--bg:#0c070d;--card:#190f1a;--panel:#190f1a;--line:#52273e;--text:#fff0f7;--muted:#baa2b4;--accent:#ff5ca6;--pink:#ff5ca6;--green:#ff5ca6;--glow:rgba(255,92,166,.22)}body{background:radial-gradient(ellipse at top right,#351327,#0a070b 66%)!important;color:#fff0f7!important;font-family:Inter,system-ui,'Segoe UI',sans-serif!important}a{color:#ffa3ce!important}a:hover{color:#ffd0e5!important}button,.primary,button.primary,.btn.primary{background:linear-gradient(120deg,#ff5ca6,#e93688)!important;color:white!important;border-color:#fa78b7!important}button:hover,.btn:hover{filter:brightness(1.1)}input,select,textarea{background:#1c111d!important;color:#fff0f7!important;border-color:#653650!important}.panel,article,.card,.stat,.metric,.kpi,.sidebar,.topbar,.hero,.loader{border-color:#51283f!important;background-color:#1a111b!important;color:#fff0f7!important}h1,h2,h3,strong{color:#ffe7f3}small,.muted,.note,p{color:#cdb4c6}.badge,.tag,.pill,.eyebrow,.legend{color:#ff99c8!important;border-color:#6b3150!important}nav button.active,nav a.active,.tabs button.active{background:#58213f!important;color:#ffe9f4!important;border-color:#f56baa!important}table th{color:#ffa7d1!important}table td,table th{border-color:#48273a!important}.warning,.notice{background:#291525!important;border-color:#ff72b3!important;color:#ffd9e9!important}.stat strong,.metric .val,.value,.accent{color:#ff96c5!important}.chart,.mapwrap,canvas{border-color:#622944!important}.cl-welcome{display:flex;align-items:center;gap:10px;margin:12px 0 18px;padding:12px 16px;border-radius:14px;background:#391829;border:1px solid #a44370;color:#ffe1f0;font-weight:600}.cl-brand{width:46px;height:46px;object-fit:cover;border-radius:50%;border:2px solid #ff5ca6;box-shadow:0 0 0 3px #ff5ca633}.cl-logo{width:min(250px,45vw);border:4px solid #ff5ca6;border-radius:20px;display:block;margin:15px auto;box-shadow:0 0 32px #ff5ca632}.cl-links{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0}.cl-links a{background:#281323;border:1px solid #763654;border-radius:12px;padding:8px 12px;text-decoration:none;font-weight:600}.cl-links a:hover{background:#4b2038}#clThemeHeader{position:relative;z-index:100}#clThemeHeader p{color:#eab8d5!important;font-size:13px;margin:0}@media(max-width:700px){.cl-welcome{font-size:13px;flex-wrap:wrap}.cl-brand{width:38px;height:38px}.cl-links a{font-size:12px}}
+
+/* CarryLab Anime Arcade — visual layer v0.8 */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap');
+html,body,button,input,select,textarea{font-family:'Nunito','Comfortaa',system-ui,sans-serif!important}
+h1,h2,h3,.logo,.brand,.brandmark,.eyebrow,.cl-welcome,.cl-anime-title{font-family:'Comfortaa','Nunito',sans-serif!important;font-weight:800!important;letter-spacing:-.035em}
+body{background:radial-gradient(ellipse at 3% 0%,#46142c 0%,transparent 37%),radial-gradient(ellipse at 95% 13%,#341d45 0%,transparent 41%),#0b070f!important}
+.panel,.card,article,.stat,.metric,.sidebar,.loader,.hero{border-radius:20px!important;box-shadow:0 10px 25px #0006, inset 0 1px 0 #ffffff09,0 0 0 1px #ff4f9d09!important}
+button,.btn,input,select{border-radius:13px!important}
+button,.btn,.panel,article{transition:transform .2s ease,box-shadow .2s ease,background-color .2s ease}
+button:hover,.btn:hover{transform:translateY(-2px)}
+.panel:hover,article:hover{box-shadow:0 15px 35px #0009,0 0 20px #ff4f9d13!important}
+.cl-anime-panel{max-width:1400px;margin:0 auto 19px;padding:15px 18px;background:linear-gradient(100deg,#180b1c,#3f1136 53%,#150b20);border:1px solid #fa68ae80;border-radius:22px;box-shadow:0 0 35px #ff4f9d22;position:relative;overflow:hidden}
+.cl-anime-panel:before{content:'♡';position:absolute;top:-43px;right:20%;font-size:145px;line-height:1;color:#ff82be12;pointer-events:none}
+.cl-anime-top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.cl-anime-title{font-size:clamp(19px,3vw,29px);color:#ffc8e4;filter:drop-shadow(0 2px 7px #ff57a066)}
+.cl-anime-note{color:#f4b9d5;font-size:13px}
+.cl-anime-heroes{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:13px}
+.cl-hero{display:flex;align-items:center;gap:8px;padding:5px 11px 5px 5px;border-radius:12px;border:1px solid #b04a7999;background:#120c19;color:#ffcee8;font-weight:800;font-size:12px}
+.cl-hero img{width:64px;height:37px;border-radius:8px;object-fit:cover;background:#33182b}
+.cl-anime-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.cl-anime-nav a{padding:9px 12px;border:1px solid #7f3a66;background:#281124;border-radius:12px;color:#ffd6ed!important;font-size:13px;font-weight:800}
+.cl-anime-nav a:hover{background:#6b2550;text-decoration:none}
+.cl-kawaii-stamp{display:inline-block;transform:rotate(-6deg);color:#ff88bf;font-size:23px;font-weight:900}
+#clThemeHeader{max-width:1400px;margin:12px auto!important}
+@media(max-width:700px){.cl-hero img{width:52px;height:30px}.cl-anime-panel{margin:8px 8px 18px}.cl-anime-top{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){button,.btn,.panel,article{transition:none!important}}
