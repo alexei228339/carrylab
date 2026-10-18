@@ -131,6 +131,10 @@ jobs:
                   page.write_text(content,encoding='utf-8')
           PY
           test -s public/hero-search.js
+      - name: Deploy replay workbench
+        run: |
+          cp replay-workbench.html public/replay-workbench.html
+          test -s public/replay-workbench.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
