@@ -104,6 +104,13 @@ jobs:
           PY
           test -s public/noir-pink.css
           test -s public/noir-pink.js
+      - name: Install Dota-first landing
+        run: |
+          cp public/index.html public/legacy-dashboard.html
+          cp landing-v2.html public/index.html
+          cp landing-v2.css public/landing-v2.css
+          test -s public/index.html
+          test -s public/landing-v2.css
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
