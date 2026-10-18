@@ -111,6 +111,10 @@ jobs:
           cp landing-v2.css public/landing-v2.css
           test -s public/index.html
           test -s public/landing-v2.css
+      - name: Publish Draft Lab
+        run: |
+          cp draft-lab.html public/draft-lab.html
+          test -s public/draft-lab.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
