@@ -77,6 +77,17 @@ jobs:
           p.write_text(html,encoding="utf-8")
           PY
           test -s public/command-center.html
+      - name: Add replay download by match ID
+        run: |
+          cp replay-download.html public/replay-download.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("public/index.html")
+          html=p.read_text(encoding="utf-8")
+          html=html.replace("</body>",'<a href="replay-download.html" style="position:fixed;right:18px;bottom:180px;z-index:9999;background:#20392b;color:#c7ef7c;border:1px solid #5c8866;padding:12px 17px;border-radius:12px;font-weight:800;text-decoration:none">Скачать реплей по ID ↗</a></body>')
+          p.write_text(html,encoding="utf-8")
+          PY
+          test -s public/replay-download.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
