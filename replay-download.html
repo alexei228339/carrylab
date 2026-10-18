@@ -10,11 +10,21 @@ $('form').addEventListener('submit',async event=>{
  $('search').disabled=true;$('status').textContent='Запрашиваю метаданные реплея в OpenDota…';
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
  try{
- const r=await fetch('https://api.opendota.com/api/replays?match_id='+encodeURIComponent(id),{signal:controller.signal});
- if(!r.ok)throw Error('OpenDota HTTP '+r.status);
- const rows=await r.json();
- const row=Array.isArray(rows)?rows.find(x=>String(x.match_id)===id&&/^\d+$/.test(String(x.cluster))&&/^\d+$/.test(String(x.replay_salt))):null;
- if(!row){$('status').textContent='OpenDota не предоставил cluster и replay_salt для этого матча. Автоматическая ссылка недоступна.';return;}
+ // Fallback: OpenDota's /replays endpoint may return 404.
+ const requests=['https://api.opendota.com/api/matches/'+id,'https://api.opendota.com/api/replays?match_id='+id];
+ let row=null,foundMatch=false,errors=[];
+ for(const endpoint of requests){
+   try{
+     const response=await fetch(endpoint,{signal:controller.signal});
+     if(!response.ok){errors.push(endpoint.includes('/matches/')?'Матч: HTTP '+response.status:'Реплей: HTTP '+response.status);continue;}
+     const data=await response.json();
+     if(endpoint.includes('/matches/'))foundMatch=String(data.match_id)===id;
+     const candidates=Array.isArray(data)?data:[data];
+     row=candidates.find(x=>String(x.match_id)===id&&/^\\d+$/.test(String(x.cluster))&&/^\\d+$/.test(String(x.replay_salt)))||null;
+     if(row)break;
+   }catch(err){errors.push(err.message);}
+ }
+ if(!row){$('status').textContent=(foundMatch?'Матч найден, но у OpenDota нет replay_salt или cluster.':'Метаданные реплея не найдены.')+' '+errors.join(' · ')+'. Проверьте доступность записи в Dota 2.';return;}
  const url='http://replay'+row.cluster+'.valve.net/570/'+id+'_'+row.replay_salt+'.dem.bz2';
  const a=document.createElement('a');a.href=url;a.textContent='Скачать реплей с Valve ↗';a.className='action';a.rel='noopener noreferrer';a.target='_blank';
  const b=document.createElement('a');b.href='https://www.opendota.com/matches/'+id;b.textContent='Данные матча OpenDota ↗';b.className='action';b.rel='noopener noreferrer';b.target='_blank';
