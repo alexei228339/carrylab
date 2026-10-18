@@ -29,9 +29,16 @@ def main():
     dest=Path(a.output).resolve();dest.mkdir(parents=True,exist_ok=True)
     print("Господин, ищу запись матча",a.match_id)
     try:
-        rows=get_json("https://api.opendota.com/api/replays?match_id="+a.match_id)
-        row=next((r for r in rows if str(r.get("match_id"))==a.match_id and str(r.get("cluster","")).isdigit() and str(r.get("replay_salt","")).isdigit()),None)
-        if not row:raise ValueError("OpenDota does not have replay metadata")
+        row=None
+        for endpoint in ("matches/"+a.match_id,"replays?match_id="+a.match_id):
+            try:
+                data=get_json("https://api.opendota.com/api/"+endpoint)
+                candidates=data if isinstance(data,list) else [data]
+                row=next((r for r in candidates if isinstance(r,dict) and str(r.get("match_id"))==a.match_id and str(r.get("cluster","")).isdigit() and str(r.get("replay_salt","")).isdigit()),None)
+                if row:break
+            except (urllib.error.HTTPError,urllib.error.URLError,ValueError):
+                pass
+        if not row:raise ValueError("Replay metadata unavailable. Check whether match/replay is public and still stored.")
         archive=a.match_id+"_"+str(row["replay_salt"])+".dem.bz2"
         url="http://replay"+str(row["cluster"])+".valve.net/570/"+archive
         target=dest/archive
