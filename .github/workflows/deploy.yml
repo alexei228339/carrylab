@@ -31,6 +31,17 @@ jobs:
           PY
           test -s public/index.html
           echo "CarryLab index.html found; website is ready to publish."
+      - name: Add version 0.3 coaching module
+        run: |
+          cp coach-v03.js public/coach-v03.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("public/index.html")
+          s=p.read_text(encoding="utf-8")
+          s=s.replace("</body>", '<script src="coach-v03.js"></script></body>')
+          p.write_text(s,encoding="utf-8")
+          PY
+          test -s public/coach-v03.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
